@@ -37,7 +37,9 @@
 <script>
 import axios from 'axios';
 import url from '@/service.config.js'
-
+import {mapActions} from 'vuex'
+import bcrypt from 'bcryptjs'
+import md5 from 'js-md5';
 export default {
   data() {
     return {
@@ -45,21 +47,30 @@ export default {
       loginUsername:"",
       loginPassword:"",
       registUsername:"",
-      registPassword:""
+      registPassword:"",
+      loginHash:'',
+      registHash:'',
+      
     };
   },
   methods:{
+      ...mapActions(['loginAction']),
+      
       regist(){
+         
         axios({
             url:url.registUser,
             method:"post",
             data:{
                 userName:this.registUsername,
-                password:this.registPassword
+                password:md5(this.registPassword)
+              
             }
         }).then(res=>{
             if(res.data.code ==200){
                 this.$toast('注册成功');
+                this.registUsername="";
+                this.registPassword=""
             }
             if(res.data.code ==500){
                 this.$toast('不可重复注册')
@@ -71,25 +82,27 @@ export default {
         })
       },
       login(){
-          axios({
+         axios({
               url:url.loginUser,
               method:"post",
               data:{
                   userName:this.loginUsername,
-                  password:this.loginPassword
+                  password:md5(this.loginPassword)
               }
           }).then(res=>{
+            console.log(res)
               if(res.data.code ==200){
-                  this.$toast('登录成功')
+                  this.loginAction(res.data.userInfo)
+                  this.$toast('登录成功'),
+                  this.$router.push('/');
               }
-               if(res.data.message='用户名不存在'){
+               if(res.data.message=='用户名不存在'){
                   this.$toast('用户名不存在')
               }
-              if(res.data.message='用户名与密码不匹配'){
+              if(res.data.message=='用户名与密码不匹配'){
                   this.$toast('密码错误')
               }
           }).catch(err=>{
-             
               if(err){
                   this.$toast('登录发生错误')
               }
